@@ -147,6 +147,7 @@ struct pizzeria_data
     {
         heuristic cur_best;
         unordered_set<ll> delivered_pizzas;
+        ll total_score = 0, num_different_pizzas;
         while (!pq_pizzas.empty())
         {
             cur_best = pq_pizzas.top();
@@ -154,8 +155,25 @@ struct pizzeria_data
 
             if (check(delivered_pizzas, cur_best.pizzas))
             {
+                num_different_pizzas = cur_best.pizzas.size();
+                total_score += (num_different_pizzas * num_different_pizzas);
+                unordered_set<ll>::iterator it;
+                for (it = begin(cur_best.pizzas); it != end(cur_best.pizzas); it++)
+                {
+                    delivered_pizzas.insert(*it);
+                }
+                num_pizzas -= cur_best.num_pizzas;
+            }
+            if (!check_leftover_pizzas())
+            {
+                break;
             }
         }
+    }
+
+    bool check_leftover_pizzas()
+    {
+        // check the 4
     }
 
     // Check that you have not delivered this pizza already.
