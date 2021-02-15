@@ -142,6 +142,36 @@ struct pizzeria_data
         }
         return overlap;
     }
+
+    void optimize()
+    {
+        heuristic cur_best;
+        unordered_set<ll> delivered_pizzas;
+        while (!pq_pizzas.empty())
+        {
+            cur_best = pq_pizzas.top();
+            pq_pizzas.pop();
+
+            if (check(delivered_pizzas, cur_best.pizzas))
+            {
+            }
+        }
+    }
+
+    // Check that you have not delivered this pizza already.
+    bool check(unordered_set<ll> delivered_pizzas, unordered_set<ll> cur_pizzas)
+    {
+        unordered_set<ll>::iterator it;
+        for (it = begin(cur_pizzas); it != end(cur_pizzas); it++)
+        {
+            ll cur_pizza = *it;
+            if (delivered_pizzas.count(cur_pizza) > 0)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
 };
 
 // The score is the overlap,
@@ -186,6 +216,6 @@ int main()
     }
     pizzeria.fill();
     // TODO: Write the code that will pop from the priority queue and give the heuristically potential best result.
-
+    pizzeria.optimize();
     return 0;
 }
