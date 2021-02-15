@@ -163,17 +163,46 @@ struct pizzeria_data
                     delivered_pizzas.insert(*it);
                 }
                 num_pizzas -= cur_best.num_pizzas;
+                // This is just to update the teams array.
+                if (cur_best.num_pizzas == 2)
+                {
+                    teams_array[0]--;
+                }
+                else if (cur_best.num_pizzas == 3)
+                {
+                    teams_array[1]--;
+                }
+                else
+                {
+                    teams_array[2]--;
+                }
             }
-            if (!check_leftover_pizzas())
+            if (!check_is_enough_teams_and_pizzas())
             {
                 break;
             }
         }
     }
 
-    bool check_leftover_pizzas()
+    bool check_is_enough_teams_and_pizzas()
     {
-        // check the 4
+        if (num_pizzas < 2)
+        {
+            return false;
+        }
+        else if (num_pizzas == 2 && teams_array[0] == 0)
+        {
+            return false;
+        }
+        else if (num_pizzas == 3 && teams_array[0] == 0 && teams_array[1] == 0)
+        {
+            return false;
+        }
+        else if (num_pizzas > 3 && teams_array[0] == 0 && teams_array[1] == 0 && teams_array[2] == 0)
+        {
+            return false;
+        }
+        return true;
     }
 
     // Check that you have not delivered this pizza already.
