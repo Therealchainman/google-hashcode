@@ -92,7 +92,6 @@ struct pizzeria_data
     */
     void fill()
     {
-        cout << "numz_pizzas" << num_pizzas << endl;
 
         for (int i = 0; i < num_pizzas; i++)
         {
@@ -102,7 +101,6 @@ struct pizzeria_data
                 {
                     for (int w = k + 1; w < num_pizzas; w++)
                     {
-                        cout << "i" << i << "j" << j << "k" << k << "w" << w << endl;
                         unordered_set<string> seen_ingred;
                         ll overlap = 0;
                         overlap += build_heuristic(seen_ingred, pizzas_available[i]);
@@ -118,7 +116,6 @@ struct pizzeria_data
                 }
             }
         }
-        cout << "after 4 combos" << endl;
         for (int i = 0; i < num_pizzas; i++)
         {
             for (int j = i + 1; j < num_pizzas; j++)
@@ -263,14 +260,7 @@ int main()
     pizzeria_data pizzeria;
     pizzeria.teams_array = {T2, T3, T4};
     pizzeria.num_pizzas = num_pizzas;
-    cout << "Check on teams_array" << endl;
-    // This is just to see the teams populates
-    for (int i = 0; i < pizzeria.teams_array.size(); i++)
-    {
-        cout << "team-size:" << pizzeria.teams_array[i] << endl;
-    }
     pizzeria.pizzas_available = vector<vector<string>>(num_pizzas);
-    cout << "size of the pizzas available" << pizzeria.pizzas_available.size() << endl;
     for (int i = 0; i < num_pizzas; i++)
     {
         vector<ll> vec;
@@ -280,14 +270,8 @@ int main()
             cin >> ingredient;
             pizzeria.pizzas_available[i].push_back(ingredient);
         }
-        cout << "current pizza index:" << i << endl;
-        for (string ingred : pizzeria.pizzas_available[i])
-        {
-            cout << "ingreds:" << ingred << endl;
-        }
     }
     pizzeria.fill();
-    // TODO: Write the code that will pop from the priority queue and give the heuristically potential best result.
     cout << pizzeria.optimize() << endl;
     ;
     return 0;
