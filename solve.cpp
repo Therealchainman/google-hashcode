@@ -46,14 +46,33 @@ ll mod(ll a, ll b)
     return (a % b + b) % b;
 }
 
+// The score is the overlap,
+struct heuristic
+{
+    ll score, num_pizzas;
+    unordered_set<ll> pizzas;
+};
+
+class pizza_compare
+{
+public:
+    // comparator function
+    bool operator()(const heuristic &a, const heuristic &b)
+    {
+        if (a.score != b.score)
+        {
+            return a.score < b.score;
+        }
+        return a.num_pizzas > b.num_pizzas;
+    }
+};
+
 // This stores the number of teams, teams_array= [2,3,5], at i=0 is the number of teams of size 2, i=1 is the number of teams of size 3,
 // And i=2 is the number of teams of size 4.
 struct pizzeria_data
 {
     vector<ll> teams_array;
-    // TODO:  Add the comparator for the heuristic, it should sort based on lowest score, than based on larger number of pizzas for that entry.
-    // This is the priority queue for the pizzas.
-    priority_queue<heuristic, custom_comparator> pq_pizzas;
+    priority_queue<heuristic, vector<heuristic>, pizza_compare> pq_pizzas;
     vector<vector<string>> pizzas_available;
     ll num_pizzas;
 
@@ -63,9 +82,17 @@ struct pizzeria_data
         pizzas_available.clear();
     }
 
-    // This method will do it all, it will fill in the priority queue for the pizzas.
+    /*
+    Fills the priority queues for the pizzas.
+    Creating the heuristic for the sized combinations of 2,3 and 4.  These are like a combination of 2, means you take pizza (1,2) that is pizza at index 1 and 2.
+    And you find the heuristic score.  I'm just using the overlap in ingredients between those two pizzas.  
+    Push this into  your priority queue containing these heuristic objects. In addition, we store the pizzas and the number of pizzas that will be
+    contained in that heuristic object.  This was the chosen heuristic to solve this problem. 
+    But we also do the same for combination of 4 distinct pizzas, and compute the heuristics on those.  
+    */
     void fill()
     {
+        cout << "numz_pizzas" << num_pizzas << endl;
 
         for (int i = 0; i < num_pizzas; i++)
         {
@@ -75,6 +102,7 @@ struct pizzeria_data
                 {
                     for (int w = k + 1; w < num_pizzas; w++)
                     {
+                        cout << "i" << i << "j" << j << "k" << k << "w" << w << endl;
                         unordered_set<string> seen_ingred;
                         ll overlap = 0;
                         overlap += build_heuristic(seen_ingred, pizzas_available[i]);
@@ -90,6 +118,7 @@ struct pizzeria_data
                 }
             }
         }
+        cout << "after 4 combos" << endl;
         for (int i = 0; i < num_pizzas; i++)
         {
             for (int j = i + 1; j < num_pizzas; j++)
@@ -143,7 +172,8 @@ struct pizzeria_data
         return overlap;
     }
 
-    void optimize()
+    //
+    ll optimize()
     {
         heuristic cur_best;
         unordered_set<ll> delivered_pizzas;
@@ -155,7 +185,7 @@ struct pizzeria_data
 
             if (check(delivered_pizzas, cur_best.pizzas))
             {
-                num_different_pizzas = cur_best.pizzas.size();
+                num_different_pizzas = cur_best.num_pizzas;
                 total_score += (num_different_pizzas * num_different_pizzas);
                 unordered_set<ll>::iterator it;
                 for (it = begin(cur_best.pizzas); it != end(cur_best.pizzas); it++)
@@ -177,14 +207,15 @@ struct pizzeria_data
                     teams_array[2]--;
                 }
             }
-            if (!check_is_enough_teams_and_pizzas())
+            if (!check_pizza())
             {
                 break;
             }
         }
+        return total_score;
     }
-
-    bool check_is_enough_teams_and_pizzas()
+    // This is checking if we no longer have enough pizzas for the teams that are remaining.
+    bool check_pizza()
     {
         if (num_pizzas < 2)
         {
@@ -221,13 +252,6 @@ struct pizzeria_data
     }
 };
 
-// The score is the overlap,
-struct heuristic
-{
-    ll score, num_pizzas;
-    unordered_set<ll> pizzas;
-};
-
 int main()
 {
     auto start = high_resolution_clock::now();
@@ -238,7 +262,9 @@ int main()
     //TODO, check if you need to clear the priority queue here.
     pizzeria_data pizzeria;
     pizzeria.teams_array = {T2, T3, T4};
+    pizzeria.num_pizzas = num_pizzas;
     cout << "Check on teams_array" << endl;
+    // This is just to see the teams populates
     for (int i = 0; i < pizzeria.teams_array.size(); i++)
     {
         cout << "team-size:" << pizzeria.teams_array[i] << endl;
@@ -249,11 +275,10 @@ int main()
     {
         vector<ll> vec;
         cin >> num_ingredients;
-        while (num_ingredients > 0)
+        while (num_ingredients--)
         {
             cin >> ingredient;
             pizzeria.pizzas_available[i].push_back(ingredient);
-            num_ingredients--;
         }
         cout << "current pizza index:" << i << endl;
         for (string ingred : pizzeria.pizzas_available[i])
@@ -263,6 +288,7 @@ int main()
     }
     pizzeria.fill();
     // TODO: Write the code that will pop from the priority queue and give the heuristically potential best result.
-    pizzeria.optimize();
+    cout << pizzeria.optimize() << endl;
+    ;
     return 0;
 }
