@@ -46,233 +46,102 @@ ll mod(ll a, ll b)
     return (a % b + b) % b;
 }
 
-// The score is the overlap,
-struct heuristic
-{
-    ll score, num_pizzas;
-    unordered_set<ll> pizzas;
-};
-
-class pizza_compare
-{
-public:
-    // comparator function
-    bool operator()(const heuristic &a, const heuristic &b)
-    {
-        if (a.score != b.score)
-        {
-            return a.score < b.score;
-        }
-        return a.num_pizzas > b.num_pizzas;
-    }
-};
-
 // This stores the number of teams, teams_array= [2,3,5], at i=0 is the number of teams of size 2, i=1 is the number of teams of size 3,
 // And i=2 is the number of teams of size 4.
 struct pizzeria_data
 {
     vector<ll> teams_array;
-    priority_queue<heuristic, vector<heuristic>, pizza_compare> pq_pizzas;
-    vector<vector<string>> pizzas_available;
+    // The vector inside is the vector holding the array of the ingredients for that pizza
+    vector<vector<string>> pizzas;
     ll num_pizzas;
+    // The number of teams that pizzas have been delivered to
+    ll numPizzasDelivered;
 
     explicit pizzeria_data()
     {
         teams_array.clear();
-        pizzas_available.clear();
+        pizzas.clear();
+        numPizzasDelivered = 0;
     }
 
-    /*
-    Fills the priority queues for the pizzas.
-    Creating the heuristic for the sized combinations of 2,3 and 4.  These are like a combination of 2, means you take pizza (1,2) that is pizza at index 1 and 2.
-    And you find the heuristic score.  I'm just using the overlap in ingredients between those two pizzas.  
-    Push this into  your priority queue containing these heuristic objects. In addition, we store the pizzas and the number of pizzas that will be
-    contained in that heuristic object.  This was the chosen heuristic to solve this problem. 
-    But we also do the same for combination of 4 distinct pizzas, and compute the heuristics on those.  
-    */
-    void fill()
+    vector<vector<ll>> pizzasDelivered()
     {
-
-        for (int i = 0; i < num_pizzas; i++)
+        vector<vector<ll>> res;
+        ll i = 0;
+        while (teams_array[0] > 0 || teams_array[1] > 0 || teams_array[2] > 0)
         {
-            for (int j = i + 1; j < num_pizzas; j++)
+            if (teams_array[0] > 0 && num_pizzas >= 2)
             {
-                for (int k = j + 1; k < num_pizzas; k++)
-                {
-                    for (int w = k + 1; w < num_pizzas; w++)
-                    {
-                        unordered_set<string> seen_ingred;
-                        ll overlap = 0;
-                        overlap += build_heuristic(seen_ingred, pizzas_available[i]);
-                        overlap += build_heuristic(seen_ingred, pizzas_available[j]);
-                        overlap += build_heuristic(seen_ingred, pizzas_available[k]);
-                        overlap += build_heuristic(seen_ingred, pizzas_available[w]);
-                        heuristic cur_heuristic;
-                        cur_heuristic.score = overlap;
-                        cur_heuristic.pizzas = {i, j, k, w};
-                        cur_heuristic.num_pizzas = 4;
-                        pq_pizzas.push(cur_heuristic);
-                    }
-                }
+                res.push_back({2, i++, i++});
+                teams_array[0]--;
+                num_pizzas -= 2;
+                numPizzasDelivered++;
+                continue;
             }
-        }
-        for (int i = 0; i < num_pizzas; i++)
-        {
-            for (int j = i + 1; j < num_pizzas; j++)
+            if (teams_array[1] > 0 && num_pizzas >= 3)
             {
-                for (int k = j + 1; k < num_pizzas; k++)
-                {
-                    unordered_set<string> seen_ingred;
-                    ll overlap = 0;
-                    overlap += build_heuristic(seen_ingred, pizzas_available[i]);
-                    overlap += build_heuristic(seen_ingred, pizzas_available[j]);
-                    overlap += build_heuristic(seen_ingred, pizzas_available[k]);
-                    heuristic cur_heuristic;
-                    cur_heuristic.score = overlap;
-                    cur_heuristic.pizzas = {i, j, k};
-                    cur_heuristic.num_pizzas = 3;
-                    pq_pizzas.push(cur_heuristic);
-                }
+                res.push_back({3, i++, i++, i++});
+                teams_array[1]--;
+                num_pizzas -= 3;
+                numPizzasDelivered++;
+                continue;
             }
-        }
-        for (int i = 0; i < num_pizzas; i++)
-        {
-            for (int j = i + 1; j < num_pizzas; j++)
+            if (teams_array[2] > 0 && num_pizzas >= 4)
             {
-                unordered_set<string> seen_ingred;
-                ll overlap = 0;
-                overlap += build_heuristic(seen_ingred, pizzas_available[i]);
-                overlap += build_heuristic(seen_ingred, pizzas_available[j]);
-                heuristic cur_heuristic;
-                cur_heuristic.score = overlap;
-                cur_heuristic.pizzas = {i, j};
-                cur_heuristic.num_pizzas = 2;
-                pq_pizzas.push(cur_heuristic);
+                res.push_back({4, i++, i++, i++, i++});
+                teams_array[2]--;
+                num_pizzas -= 4;
+                numPizzasDelivered++;
+                continue;
             }
-        }
-    }
-
-    ll build_heuristic(unordered_set<string> &seen_ingredients, vector<string> ingredients)
-    {
-        ll overlap = 0;
-        for (string ingred : ingredients)
-        {
-            if (seen_ingredients.count(ingred) > 0)
-            {
-                overlap++;
-            }
-            else
-            {
-                seen_ingredients.insert(ingred);
-            }
-        }
-        return overlap;
-    }
-
-    //
-    ll optimize()
-    {
-        heuristic cur_best;
-        unordered_set<ll> delivered_pizzas;
-        ll total_score = 0, num_different_pizzas;
-        while (!pq_pizzas.empty())
-        {
-            cur_best = pq_pizzas.top();
-            pq_pizzas.pop();
-
-            if (check(delivered_pizzas, cur_best.pizzas))
-            {
-                num_different_pizzas = cur_best.num_pizzas;
-                total_score += (num_different_pizzas * num_different_pizzas);
-                unordered_set<ll>::iterator it;
-                for (it = begin(cur_best.pizzas); it != end(cur_best.pizzas); it++)
-                {
-                    delivered_pizzas.insert(*it);
-                }
-                num_pizzas -= cur_best.num_pizzas;
-                // This is just to update the teams array.
-                if (cur_best.num_pizzas == 2)
-                {
-                    teams_array[0]--;
-                }
-                else if (cur_best.num_pizzas == 3)
-                {
-                    teams_array[1]--;
-                }
-                else
-                {
-                    teams_array[2]--;
-                }
-            }
-            if (!check_pizza())
+            if (true)
             {
                 break;
             }
         }
-        return total_score;
-    }
-    // This is checking if we no longer have enough pizzas for the teams that are remaining.
-    bool check_pizza()
-    {
-        if (num_pizzas < 2)
-        {
-            return false;
-        }
-        else if (num_pizzas == 2 && teams_array[0] == 0)
-        {
-            return false;
-        }
-        else if (num_pizzas == 3 && teams_array[0] == 0 && teams_array[1] == 0)
-        {
-            return false;
-        }
-        else if (num_pizzas > 3 && teams_array[0] == 0 && teams_array[1] == 0 && teams_array[2] == 0)
-        {
-            return false;
-        }
-        return true;
-    }
-
-    // Check that you have not delivered this pizza already.
-    bool check(unordered_set<ll> delivered_pizzas, unordered_set<ll> cur_pizzas)
-    {
-        unordered_set<ll>::iterator it;
-        for (it = begin(cur_pizzas); it != end(cur_pizzas); it++)
-        {
-            ll cur_pizza = *it;
-            if (delivered_pizzas.count(cur_pizza) > 0)
-            {
-                return false;
-            }
-        }
-        return true;
+        return res;
     }
 };
 
 int main()
 {
-    auto start = high_resolution_clock::now();
-    freopen("inputs/a_example", "r", stdin);
-    ll num_pizzas, T2, T3, T4, num_ingredients;
-    string ingredient;
-    cin >> num_pizzas >> T2 >> T3 >> T4;
-    //TODO, check if you need to clear the priority queue here.
-    pizzeria_data pizzeria;
-    pizzeria.teams_array = {T2, T3, T4};
-    pizzeria.num_pizzas = num_pizzas;
-    pizzeria.pizzas_available = vector<vector<string>>(num_pizzas);
-    for (int i = 0; i < num_pizzas; i++)
+    vector<const char *> inputs = {"inputs/a.in", "inputs/b.in", "inputs/c.in", "inputs/d.in", "inputs/e.in"};
+    vector<const char *> outputs = {"outputs/a.out", "outputs/b.out", "outputs/c.out", "outputs/d.out", "outputs/e.out"};
+    for (ll i = 0; i < inputs.size(); i++)
     {
-        vector<ll> vec;
-        cin >> num_ingredients;
-        while (num_ingredients--)
+        freopen(inputs[i], "r", stdin);
+        ll num_pizzas, T2, T3, T4, num_ingredients;
+        string ingredient;
+        cin >> num_pizzas >> T2 >> T3 >> T4;
+        //TODO, check if you need to clear the priority queue here.
+        pizzeria_data pizzeria;
+        pizzeria.teams_array = {T2, T3, T4};
+        pizzeria.num_pizzas = num_pizzas;
+        pizzeria.pizzas = vector<vector<string>>(num_pizzas);
+        for (ll i = 0; i < num_pizzas; i++)
         {
-            cin >> ingredient;
-            pizzeria.pizzas_available[i].push_back(ingredient);
+            vector<ll> vec;
+            cin >> num_ingredients;
+            while (num_ingredients--)
+            {
+                cin >> ingredient;
+                pizzeria.pizzas[i].push_back(ingredient);
+            }
         }
+
+        vector<vector<ll>> delivered = pizzeria.pizzasDelivered();
+        ofstream file;
+        file.open(outputs[i]);
+        file << pizzeria.numPizzasDelivered << endl;
+
+        for (vector<ll> del : delivered)
+        {
+            stringstream oss;
+            copy(del.begin(), del.end(), ostream_iterator<ll>(oss, " "));
+            file << oss.str() << endl;
+        }
+        file.close();
     }
-    pizzeria.fill();
-    cout << pizzeria.optimize() << endl;
-    ;
+
     return 0;
 }
